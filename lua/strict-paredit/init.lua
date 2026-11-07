@@ -125,6 +125,11 @@ local function delete_delimiter_pair(pair, adjust_cursor_after)
 		local open_row, open_col = pair.open.row, pair.open.col
 		local close_row, close_col = pair.close.row, pair.close.col
 
+		-- HACK: don't delete pairwise unless empty
+		if close_row ~= open_row or close_col ~= open_col + 1 then
+			return
+		end
+
 		if close_row > open_row or (close_row == open_row and close_col > open_col) then
 			-- Delete closing first, then opening
 			delete_char_at(bufnr, close_row, close_col)
@@ -161,7 +166,6 @@ local function handle_close_insert(char)
 		return "<Right>"
 	else
 		-- Block insertion - would create unbalanced state
-		vim.notify("Strict paredit: cannot insert unmatched " .. char, vim.log.levels.WARN)
 		return ""
 	end
 end
@@ -233,7 +237,6 @@ local function handle_backspace()
 			return ""
 		else
 			-- No matching pair found, block deletion
-			vim.notify("Strict paredit: cannot delete unmatched delimiter", vim.log.levels.WARN)
 			return ""
 		end
 	end
@@ -256,7 +259,6 @@ local function handle_delete()
 			delete_delimiter_pair(pair, false)
 			return ""
 		else
-			vim.notify("Strict paredit: cannot delete unmatched delimiter", vim.log.levels.WARN)
 			return ""
 		end
 	end
@@ -279,7 +281,6 @@ local function handle_x_normal()
 			delete_delimiter_pair(pair, false)
 			return ""
 		else
-			vim.notify("Strict paredit: cannot delete unmatched delimiter", vim.log.levels.WARN)
 			return ""
 		end
 	end
@@ -310,7 +311,6 @@ local function handle_X_normal()
 			delete_delimiter_pair(pair, true)
 			return ""
 		else
-			vim.notify("Strict paredit: cannot delete unmatched delimiter", vim.log.levels.WARN)
 			return ""
 		end
 	end
@@ -420,20 +420,6 @@ function M.setup(opts)
 			"lfe",
 			"query", -- treesitter queries
 		}
-
-	-- Option to show notifications (default true)
-	M.notify = opts.notify ~= false
-
-	-- Override notify function if disabled
-	if not M.notify then
-		local original_notify = vim.notify
-		vim.notify = function(msg, level, ...)
-			if msg:match("^Strict paredit:") then
-				return
-			end
-			return original_notify(msg, level, ...)
-		end
-	end
 
 	-- Setup for specified filetypes
 	vim.api.nvim_create_autocmd("FileType", {
