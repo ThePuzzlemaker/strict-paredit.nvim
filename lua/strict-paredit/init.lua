@@ -142,7 +142,15 @@ local function delete_delimiter_pair(pair, adjust_cursor_after)
 
 		-- Adjust cursor if requested
 		if adjust_cursor_after then
-			local new_col = cursor[2] - 1
+			local adj = 0
+			if close_row == open_row then
+				-- Same row: need to move cursor by 2 left
+				adj = 2
+			else
+				-- Different row: need to move cursor only by 1
+				adj = 1
+			end
+			local new_col = cursor[2] - adj
 			if new_col < 0 then
 				new_col = 0
 			end
