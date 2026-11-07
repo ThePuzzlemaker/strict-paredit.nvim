@@ -143,8 +143,8 @@ local function delete_delimiter_pair(pair, adjust_cursor_after)
 		-- Adjust cursor if requested
 		if adjust_cursor_after then
 			local adj = 0
-			if close_row == open_row then
-				-- Same row: need to move cursor by 2 left
+			if close_row == open_row and cursor[2] > close_col then
+				-- Same row & after end: need to move cursor by 2 left
 				adj = 2
 			else
 				-- Different row: need to move cursor only by 1
